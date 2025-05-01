@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Booking</title>
+    <link rel="stylesheet" href="bookingIndex.css"> <!-- Link to your CSS -->
+</head>
+<body>
+    <h1>Add New Booking</h1>
+    <form id="bookingForm">
+        <label>Booking ID: <input type="number" name="bookingID" required></label><br><br>
+        <label>Member ID (must be a valid memberID): <input type="number" name="memberID" required></label><br><br>
+        <label>Session ID (must be a valid sessionID): <input type="number" name="sessionID" required></label><br><br>
+        <label>Booking Date: <input type="date" name="bookingDate" required></label><br><br>
+        <label>Status: 
+            <select name="status" required>
+                <option value="Pending">Pending</option>
+                <option value="Confirmed">Confirmed</option>
+                <option value="Cancelled">Cancelled</option>
+            </select>
+        </label><br><br>
+        <button type="submit">Add Booking</button>
+    </form>
+
+    <script>
+        // ✅ Admin Protection
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Please login as admin to access this page.");
+            window.location.href = "login.html";
+        }
+
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.role.toLowerCase() !== "admin") {
+            alert("Unauthorized access!");
+            window.location.href = "login.html";
+        }
+
+        // ✅ Submit form
+        document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const form = e.target;
+            const data = {
+                bookingID: form.bookingID.value,
+                memberID: form.memberID.value,
+                sessionID: form.sessionID.value,
+                bookingDate: form.bookingDate.value,
+                status: form.status.value
+            };
+
+            const res = await fetch("http://localhost:3000/bookings", {
+                method: "POST",
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`  // Optional if backend route uses verifyAdmin
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                alert("✅ Booking added successfully");
+                form.reset();
+            } else {
+                const err = await res.text();
+                alert("❌ Failed to add booking: " + err);
+            }
+        });
+    </script>
+</body>
+</html>

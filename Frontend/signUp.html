@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="signUp.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up</title>
+</head>
+<body>
+    <div class="container">
+        <!-- your existing h2, form, etc. here -->
+    <h2>Sign Up</h2>
+    <form id="signup-form">
+        <input type="text" id="name" placeholder="Full Name" required><br>
+        <input type="email" id="email" placeholder="Email" required><br>
+        <input type="text" id="phone" placeholder="Phone" required><br>
+        <input type="text" id="username" placeholder="Username" required><br>
+        <input type="password" id="password" placeholder="Password" required><br>
+        <button type="submit">Sign Up</button>
+    </form>
+
+    <p id="responseMsg" style="color: red;"></p>  <!-- Error message area -->
+
+    <p>Already have an account? <a href="login.html">Log in</a></p>
+
+    <script>
+        // Handle form submission
+        document.getElementById('signup-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+    
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+    
+            // Sending POST request to backend to create new user
+            const response = await fetch('http://localhost:3000/users', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name, email, phone, username, password, role: 'Member' }),  // Default role as 'Member'
+            });
+    
+            const data = await response.json();
+    
+            // If the sign-up is successful
+            if (response.ok) {
+                // Save the JWT token to localStorage
+                localStorage.setItem('token', data.token);
+    
+                // Redirect to member dashboard after successful sign up
+                window.location.href = 'memberDashboard.html';  // Removed leading slash
+            } else {
+                // Display the error message returned from the backend
+                document.getElementById("responseMsg").innerText = data.message || 'Sign-up failed, please try again.';
+            }
+        });
+    </script>
+     </div>
+</body>
+</html>

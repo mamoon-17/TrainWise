@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Equipment</title>
+    <link rel="stylesheet" href="equipmentIndex.css"> <!-- Link to your CSS -->
+</head>
+<body>
+    <h1>Add New Equipment</h1>
+    <form id="equipmentForm">
+        <label>Equipment ID: <input type="number" name="equipmentID" required></label><br><br>
+        <label>Equipment Name: <input type="text" name="name" required></label><br><br>
+        <label>Category: <input type="text" name="category" required></label><br><br>
+        <label>Quantity: <input type="number" name="qty" required min="1"></label><br><br>
+        <button type="submit">Add Equipment</button>
+    </form>
+
+    <script>
+        // ✅ Admin authentication check
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Please log in as an admin to access this page.");
+            window.location.href = "login.html";
+        }
+
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.role.toLowerCase() !== "admin") {
+            alert("Unauthorized access! Only admins can access this page.");
+            window.location.href = "login.html";
+        }
+
+        // ✅ Submit equipment form
+        document.getElementById('equipmentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const form = e.target;
+            const data = {
+                equipmentID: parseInt(form.equipmentID.value),
+                name: form.name.value,
+                category: form.category.value,
+                qty: parseInt(form.qty.value)
+            };
+
+            const res = await fetch("http://localhost:3000/equipment", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                alert("✅ Equipment added successfully");
+                form.reset();
+            } else {
+                const err = await res.text();
+                alert("❌ Failed to add equipment: " + err);
+            }
+        });
+    </script>
+</body>
+</html>

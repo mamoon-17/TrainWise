@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance</title>
+    <link rel="stylesheet" href="attendanceIndex.css"> <!-- Link to your CSS -->
+</head>      
+<body>
+    <h1>All Attendance Records</h1>
+    <a href="attendanceAdd.html">Add New Attendance</a>
+    <br><br>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Member ID</th>
+                <th>Date</th>
+                <th>Check-in Time</th>
+                <th>Check-out Time</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="attendanceTableBody">
+            <!-- Attendance rows will be added here -->
+        </tbody>
+    </table>
+
+    <script>
+        // Admin check - Ensure only admin users can access this page
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+            // No token, redirect to login
+            window.location.href = "login.html";
+        }
+
+        const payload = JSON.parse(atob(token.split('.')[1]));
+
+        // If the role is not 'admin', redirect to a page like 'unauthorized.html' or 'login.html'
+        if (payload.role.toLowerCase() !== "admin") {
+            alert("Unauthorized access!");
+            window.location.href = "login.html";  // Or redirect to any unauthorized page
+        }
+
+        // Fetch attendance records from backend and populate the table
+        fetch("http://localhost:3000/attendance")
+            .then(res => res.json())
+            .then(attendanceRecords => {
+                const tbody = document.getElementById("attendanceTableBody");
+
+                attendanceRecords.forEach(record => {
+                    const row = `
+                        <tr>
+                            <td>${record.memberID}</td>
+                            <td>${new Date(record.date).toLocaleDateString('en-GB')}</td>
+                            <td>${new Date(record.checkInTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</td>
+                            <td>${record.checkOutTime ? new Date(record.checkOutTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : 'N/A'}</td>
+
+                            <td>
+                                <a href="attendanceEdit.html?memberID=${record.memberID}&date=${record.date}">Edit</a> |
+                                <button onclick="deleteAttendance('${record.memberID}', '${record.date}')">Delete</button>
+                            </td>
+                        </tr>`;
+                    tbody.innerHTML += row;
+                });
+            })
+            .catch(err => {
+                console.error("Error fetching attendance records:", err);
+                alert("Failed to load attendance data.");
+            });
+
+        // Function to handle attendance deletion
+        function deleteAttendance(memberID, date) {
+            if (confirm("Are you sure you want to delete this attendance?")) {
+                fetch(`http://localhost:3000/attendance/${memberID}/${date}`, {
+                    method: "DELETE"
+                })
+                .then(res => {
+                    if (res.ok) {
+                        alert("Attendance deleted successfully");
+                        location.reload();
+                    } else {
+                        alert("Failed to delete attendance");
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

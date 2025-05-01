@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Supplier</title>
+    <link rel="stylesheet" href="supplierIndex.css"> <!-- Link to your CSS -->
+</head>
+<body>
+    <h1>Edit Supplier</h1>
+    <form id="supplierForm">
+        <label>Supplier ID:</label><br>
+        <input type="number" name="supplierID" readonly><br><br>
+
+        <label>Name:</label><br>
+        <input type="text" name="name" required><br><br>
+
+        <label>Contact:</label><br>
+        <input type="text" name="contact" required><br><br>
+
+        <label>Email:</label><br>
+        <input type="email" name="email" required><br><br>
+
+        <label>Product Supplied:</label><br>
+        <input type="text" name="productSupplied" required><br><br>
+
+        <button type="submit">Update Supplier</button>
+    </form>
+
+    <script>
+        // ✅ Admin-only access check
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Please log in first.");
+            window.location.href = "login.html";
+        }
+
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            if (payload.role.toLowerCase() !== "admin") {
+                alert("Unauthorized access. Admins only.");
+                window.location.href = "login.html";
+            }
+        } catch (err) {
+            alert("Invalid token. Please log in again.");
+            window.location.href = "login.html";
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        const supplierID = params.get("supplierID");
+
+        fetch(`http://localhost:3000/suppliers/${supplierID}`)
+            .then(res => res.json())
+            .then(supplier => {
+                const form = document.forms["supplierForm"];
+                form.supplierID.value = supplier.supplierID;
+                form.name.value = supplier.name;
+                form.contact.value = supplier.contact;
+                form.email.value = supplier.email;
+                form.productSupplied.value = supplier.productSupplied;
+            });
+
+        document.getElementById("supplierForm").addEventListener("submit", function(e) {
+            e.preventDefault();
+            const form = this;
+            const data = {
+                name: form.name.value,
+                contact: form.contact.value,
+                email: form.email.value,
+                productSupplied: form.productSupplied.value
+            };
+
+            fetch(`http://localhost:3000/suppliers/${supplierID}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            })
+            .then(res => {
+                if (res.ok) {
+                    alert("Supplier updated successfully");
+                    window.location.href = "supplierIndex.html";
+                } else {
+                    alert("Failed to update supplier");
+                }
+            });
+        });
+    </script>
+</body>
+</html>

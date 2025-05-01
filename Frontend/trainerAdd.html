@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Trainer</title>
+    <link rel="stylesheet" href="manageMembers.css"> <!-- Link to your CSS -->
+</head>
+<body>
+    <h1>Add New Trainer</h1>
+    <form id="trainerForm">
+        <!-- Only ask for userID and specialization -->
+        <label>User ID (must be a valid userID): <input type="number" name="userID" required></label><br><br>
+        <label>Specialization: <input type="text" name="specialization" required></label><br><br>
+        <button type="submit">Add Trainer</button>
+    </form>
+
+    <script>
+        // Admin check - Ensure only admin users can access this page
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+            // No token, redirect to login
+            window.location.href = "login.html";
+        }
+
+        const payload = JSON.parse(atob(token.split('.')[1]));
+
+        // If the role is not 'admin', redirect to a page like 'unauthorized.html' or 'login.html'
+        if (payload.role.toLowerCase() !== "admin") {
+            alert("Unauthorized access!");
+            window.location.href = "login.html";  // Or redirect to any unauthorized page
+        }
+
+        document.getElementById('trainerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const form = e.target;
+            const data = {
+                userID: form.userID.value,      // Only send userID and specialization
+                specialization: form.specialization.value
+            };
+
+            const res = await fetch("http://localhost:3000/trainers", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                alert("Trainer added successfully");
+                form.reset();
+            } else {
+                const err = await res.text();
+                alert("Failed to add trainer: " + err);
+            }
+        });
+    </script>
+</body>
+</html>

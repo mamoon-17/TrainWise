@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equipment</title>
+    <link rel="stylesheet" href="equipmentIndex.css">
+</head>
+<body>
+    <h1>All Equipment</h1>
+    <a href="equipmentAdd.html">Add New Equipment</a>
+    <br><br>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Equipment ID</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Quantity</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="equipmentTableBody">
+            <!-- Equipment rows will be added here -->
+        </tbody>
+    </table>
+
+    <script>
+        // ✅ Token & role validation
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Please log in as an admin.");
+            window.location.href = "login.html";
+        }
+
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.role.toLowerCase() !== "admin") {
+            alert("Unauthorized access!");
+            window.location.href = "login.html";
+        }
+
+        // ✅ Fetch equipment data
+        fetch("http://localhost:3000/equipment", {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        })
+        .then(res => res.json())
+        .then(equipment => {
+            const tbody = document.getElementById("equipmentTableBody");
+
+            equipment.forEach(item => {
+                const row = `
+                    <tr>
+                        <td>${item.equipmentID}</td>
+                        <td>${item.name}</td>
+                        <td>${item.category}</td>
+                        <td>${item.qty}</td>
+                        <td>
+                            <a href="equipmentEdit.html?id=${item.equipmentID}">Edit</a> |
+                            <button onclick="deleteEquipment('${item.equipmentID}')">Delete</button>
+                        </td>
+                    </tr>`;
+                tbody.innerHTML += row;
+            });
+        })
+        .catch(err => {
+            console.error("Failed to load equipment:", err);
+            alert("Error loading equipment data.");
+        });
+
+        // ✅ Delete equipment
+        function deleteEquipment(id) {
+            if (confirm("Are you sure you want to delete this equipment?")) {
+                fetch(`http://localhost:3000/equipment/${id}`, {
+                    method: "DELETE",
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    }
+                })
+                .then(res => {
+                    if (res.ok) {
+                        alert("Equipment deleted successfully");
+                        location.reload();
+                    } else {
+                        alert("Failed to delete equipment");
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

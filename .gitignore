@@ -1,0 +1,24 @@
+# Node modules
+backend/node_modules/
+
+# Environment variables
+backend/.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# IDEs and editors
+.vscode/
+*.swp
+
+# Optional: Ignore compiled files or dist folders if any
+dist/
+build/
+
+# Optional: Database dumps or generated SQL files
+*.sql~

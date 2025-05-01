@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suppliers</title>
+    <link rel="stylesheet" href="supplierIndex.css"> <!-- Link to your CSS -->
+</head>      
+<body>
+    <h1>All Suppliers</h1>
+    <a href="supplierAdd.html">Add New Supplier</a>
+    <br><br>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Supplier ID</th>
+                <th>Name</th>
+                <th>Contact</th>
+                <th>Email</th>
+                <th>Product Supplied</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="supplierTableBody">
+            <!-- Supplier rows will be added here -->
+        </tbody>
+    </table>
+
+    <script>
+        // ✅ Admin-only access check using JWT from localStorage
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Please log in first.");
+            window.location.href = "login.html";
+        }
+
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            if (payload.role.toLowerCase() !== "admin") {
+                alert("Unauthorized access. Admins only.");
+                window.location.href = "login.html";
+            }
+        } catch (err) {
+            alert("Invalid token. Please log in again.");
+            window.location.href = "login.html";
+        }
+
+        // ✅ Fetch and display suppliers
+        fetch("http://localhost:3000/suppliers")
+            .then(res => res.json())
+            .then(suppliers => {
+                const tbody = document.getElementById("supplierTableBody");
+
+                suppliers.forEach(supplier => {
+                    const row = `
+                        <tr>
+                            <td>${supplier.supplierID}</td>
+                            <td>${supplier.name}</td>
+                            <td>${supplier.contact}</td>
+                            <td>${supplier.email}</td>
+                            <td>${supplier.productSupplied}</td>
+                            <td>
+                                <a href="supplierEdit.html?supplierID=${supplier.supplierID}">Edit</a> |
+                                <button onclick="deleteSupplier('${supplier.supplierID}')">Delete</button>
+                            </td>
+                        </tr>`;
+                    tbody.innerHTML += row;
+                });
+            });
+
+        function deleteSupplier(supplierID) {
+            if (confirm("Are you sure you want to delete this supplier?")) {
+                fetch(`http://localhost:3000/suppliers/${supplierID}`, {
+                    method: "DELETE"
+                })
+                .then(res => {
+                    if (res.ok) {
+                        alert("Supplier deleted successfully");
+                        location.reload();
+                    } else {
+                        alert("Failed to delete supplier");
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

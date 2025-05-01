@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Workout Session</title>
+    <link rel="stylesheet" href="workoutSessionIndex.css"> <!-- Link to your CSS -->
+</head>
+<body>
+    <h1>Add New Workout Session</h1>
+    <form id="workoutSessionForm">
+        <label>Session ID: <input type="number" name="sessionID" required></label><br><br>
+        <label>Trainer ID (must be a valid trainerID): <input type="number" name="trainerID" required></label><br><br>
+        <label>Session Type: <input type="text" name="sessionType" required></label><br><br>
+        <label>Session Date: <input type="date" name="sessionDate" required></label><br><br>
+        <label>Start Time: <input type="time" name="startTime" required></label><br><br>
+        <label>End Time: <input type="time" name="endTime"></label><br><br>
+        <button type="submit">Add Session</button>
+    </form>
+
+    <script>
+        // ✅ Admin-only access check
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Please log in first.");
+            window.location.href = "login.html";
+        }
+
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.role.toLowerCase() !== "admin") {
+            alert("Unauthorized access. Admins only.");
+            window.location.href = "login.html";
+        }
+
+        // ✅ Submit new workout session
+        document.getElementById('workoutSessionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const form = e.target;
+            const data = {
+                sessionID: form.sessionID.value,
+                trainerID: form.trainerID.value,
+                sessionType: form.sessionType.value,
+                sessionDate: form.sessionDate.value,
+                startTime: form.startTime.value,
+                endTime: form.endTime.value
+            };
+
+            const res = await fetch("http://localhost:3000/workoutSessions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                alert("✅ Workout session added successfully");
+                form.reset();
+            } else {
+                const err = await res.text();
+                alert("❌ Failed to add session: " + err);
+            }
+        });
+    </script>
+</body>
+</html>

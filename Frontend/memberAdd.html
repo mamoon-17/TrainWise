@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="manageMembers.css">
+  <title>Add Member</title>
+</head>
+<body>
+  <h1>Add New Member</h1>
+
+  <form id="memberForm">
+    <label>Member ID: <input type="number" name="memberID" required></label><br>
+    <label>Registration Date: <input type="date" name="registrationDate" required></label><br>
+    <label>Membership Type:
+      <select name="membershipType" required>
+        <option value="">Select</option>
+        <option value="Monthly">Monthly</option>
+        <option value="Yearly">Yearly</option>
+        <option value="Custom">Custom</option>
+      </select>
+    </label><br>
+    <label>Start Date: <input type="date" name="start_date" required></label><br>
+    <label>End Date: <input type="date" name="end_date" required></label><br><br>
+    <button type="submit">Add Member</button>
+  </form>
+
+  <script>
+    // Check if user is logged in and if they are an admin
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      // No token, redirect to login
+      window.location.href = "login.html";
+    }
+
+    const payload = JSON.parse(atob(token.split('.')[1]));
+
+    // If the role is not 'admin', redirect to a page like 'unauthorized.html' or 'login.html'
+    if (payload.role.toLowerCase() !== "admin") {
+      alert("Unauthorized access!");
+      window.location.href = "login.html";  // Or redirect to any unauthorized page
+    }
+
+    // Handling form submission to add a new member
+    document.getElementById('memberForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const form = e.target;
+      const data = {
+        memberID: parseInt(form.memberID.value),  // Ensure memberID is parsed as an integer
+        registrationDate: form.registrationDate.value,
+        membershipType: form.membershipType.value,
+        start_date: form.start_date.value,
+        end_date: form.end_date.value
+      };
+
+      try {
+        const res = await fetch("http://localhost:3000/members", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+
+        const responseMsg = await res.json();
+        alert(responseMsg.message);  // Show success message from the backend
+        form.reset();  // Reset form after submission
+      } catch (err) {
+        console.error("Error adding member:", err);
+        alert("Failed to add member.");
+      }
+    });
+  </script>
+</body>
+</html>

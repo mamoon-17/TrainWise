@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Trainer Schedule</title>
+    <link rel="stylesheet" href="trainerSchedulesIndex.css"> <!-- Link to your CSS -->
+</head>
+<body>
+    <h1>Add New Trainer Schedule</h1>
+    <form id="trainerScheduleForm">
+        <label>Schedule ID: <input type="number" name="scheduleID" required></label><br><br>
+        <label>Trainer ID (must be a valid trainerID): <input type="number" name="trainerID" required></label><br><br>
+        <label>Available Days: <input type="text" name="availableDays" required></label><br><br>
+        <label>Start Time: <input type="time" name="startTime" required></label><br><br>
+        <label>End Time: <input type="time" name="endTime" required></label><br><br>
+        <button type="submit">Add Schedule</button>
+    </form>
+
+    <script>
+        // ✅ Admin-only page check
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Please log in to continue.");
+            window.location.href = "login.html";
+        }
+
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.role.toLowerCase() !== "admin") {
+            alert("Unauthorized access. Admins only.");
+            window.location.href = "login.html";
+        }
+
+        // ✅ Form submission
+        document.getElementById('trainerScheduleForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const form = e.target;
+            const data = {
+                scheduleID: form.scheduleID.value,
+                trainerID: form.trainerID.value,
+                availableDays: form.availableDays.value,
+                startTime: form.startTime.value,
+                endTime: form.endTime.value
+            };
+
+            const res = await fetch("http://localhost:3000/trainerSchedules", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                alert("Trainer schedule added successfully");
+                form.reset();
+            } else {
+                const err = await res.text();
+                alert("Failed to add schedule: " + err);
+            }
+        });
+    </script>
+</body>
+</html>

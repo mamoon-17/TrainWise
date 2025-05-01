@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Attendance</title>
+    <link rel="stylesheet" href="attendanceIndex.css"> <!-- Link to your CSS -->
+</head>
+<body>
+    <h1>Add New Attendance</h1>
+
+    <!-- Form to add attendance -->
+    <form id="attendanceForm">
+        <label>Member ID (must be a valid memberID): <input type="number" name="memberID" required></label><br><br>
+        <label>Date: <input type="date" name="date" required></label><br><br>
+        <label>Check-in Time: <input type="time" name="checkInTime" required></label><br><br>
+        <label>Check-out Time: <input type="time" name="checkOutTime"></label><br><br>
+        <button type="submit">Add Attendance</button>
+    </form>
+
+    <script>
+        // Admin check - Ensure only admin users can access this page
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+            // No token, redirect to login
+            window.location.href = "login.html";
+        }
+
+        const payload = JSON.parse(atob(token.split('.')[1]));
+
+        // If the role is not 'admin', redirect to a page like 'unauthorized.html' or 'login.html'
+        if (payload.role.toLowerCase() !== "admin") {
+            alert("Unauthorized access!");
+            window.location.href = "login.html";  // Or redirect to any unauthorized page
+        }
+
+        // Handle form submission
+        document.getElementById('attendanceForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const form = e.target;
+            const data = {
+                memberID: form.memberID.value,
+                date: form.date.value,
+                checkInTime: form.checkInTime.value,
+                checkOutTime: form.checkOutTime.value
+            };
+
+            // Send POST request to backend to add new attendance
+            const res = await fetch("http://localhost:3000/attendance", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                alert("Attendance added successfully");
+                form.reset();  // Reset the form after successful submission
+            } else {
+                const err = await res.text();
+                alert("Failed to add attendance: " + err);
+            }
+        });
+    </script>
+</body>
+</html>

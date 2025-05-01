@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment History</title>
+    <link rel="stylesheet" href="paymentHistoryIndex.css"> <!-- Link to your CSS -->
+</head>      
+<body>
+    <h1>All Payment History</h1>
+    <a href="paymentHistoryAdd.html">Add New Payment</a>
+    <br><br>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Payment ID</th>
+                <th>Member ID</th>
+                <th>Amount</th>
+                <th>Payment Method</th>
+                <th>Payment Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="paymentTableBody">
+            <!-- Payment rows will be added here -->
+        </tbody>
+    </table>
+
+    <script>
+        // ✅ Admin-only access check
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Please log in first.");
+            window.location.href = "login.html";
+        }
+
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.role.toLowerCase() !== "admin") {
+            alert("Unauthorized access. Admins only.");
+            window.location.href = "login.html";
+        }
+
+        // ✅ Fetch all payments (accessible only to admins)
+        fetch("http://localhost:3000/paymentHistory", {
+            headers: {
+                "Authorization": `Bearer ${token}` // Include the JWT token for authorization
+            }
+        })
+            .then(res => res.json())
+            .then(payments => {
+                const tbody = document.getElementById("paymentTableBody");
+
+                payments.forEach(payment => {
+                    const row = `
+                        <tr>
+                            <td>${payment.paymentID}</td>
+                            <td>${payment.memberID}</td>
+                            <td>${payment.amount}</td>
+                            <td>${payment.paymentMethod}</td>
+                            <td>${new Date(payment.paymentDate).toLocaleDateString('en-GB')}</td>
+                            <td>
+                                <a href="paymentHistoryEdit.html?paymentID=${payment.paymentID}">Edit</a> |
+                                <button onclick="deletePayment('${payment.paymentID}')">Delete</button>
+                            </td>
+                        </tr>`;
+                    tbody.innerHTML += row;
+                });
+            });
+
+        function deletePayment(paymentID) {
+            if (confirm("Are you sure you want to delete this payment?")) {
+                fetch(`http://localhost:3000/paymentHistory/${paymentID}`, {
+                    method: "DELETE",
+                    headers: {
+                        "Authorization": `Bearer ${token}` // Include the JWT token for authorization
+                    }
+                })
+                .then(res => {
+                    if (res.ok) {
+                        alert("Payment deleted successfully");
+                        location.reload();
+                    } else {
+                        alert("Failed to delete payment");
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Attendance</title>
+    <link rel="stylesheet" href="attendanceIndex.css"> <!-- Link to your CSS -->
+</head>
+<body>
+    <h1>Edit Attendance</h1>
+    <form id="attendanceForm">
+        <label>Member ID:</label><br>
+        <input type="number" name="memberID" readonly><br><br>
+
+        <label>Date:</label><br>
+        <input type="date" name="date" readonly><br><br>
+
+        <label>Check-in Time:</label><br>
+        <input type="time" name="checkInTime" required><br><br>
+
+        <label>Check-out Time:</label><br>
+        <input type="time" name="checkOutTime"><br><br>
+
+        <button type="submit">Update Attendance</button>
+    </form>
+
+    <script>
+        // Admin check - Ensure only admin users can access this page
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+            // No token, redirect to login
+            window.location.href = "login.html";
+        }
+
+        const payload = JSON.parse(atob(token.split('.')[1]));
+
+        // If the role is not 'admin', redirect to a page like 'unauthorized.html' or 'login.html'
+        if (payload.role.toLowerCase() !== "admin") {
+            alert("Unauthorized access!");
+            window.location.href = "login.html";  // Or redirect to any unauthorized page
+        }
+
+        // Get memberID and date from URL parameters
+        const params = new URLSearchParams(window.location.search);
+        const memberID = params.get("memberID");
+        const date = params.get("date");
+
+        // Fetch attendance details to pre-fill the form
+        fetch(`http://localhost:3000/attendance/${memberID}/${date}`)
+            .then(res => res.json())
+            .then(attendance => {
+                const form = document.forms["attendanceForm"];
+                form.memberID.value = attendance.memberID;
+                form.date.value = attendance.date;
+                form.checkInTime.value = attendance.checkInTime;
+                form.checkOutTime.value = attendance.checkOutTime || '';
+            })
+            .catch(err => {
+                console.error("Error fetching attendance data:", err);
+                alert("Failed to load attendance details.");
+            });
+
+        // Handle form submission to update attendance
+        document.getElementById("attendanceForm").addEventListener("submit", function(e) {
+            e.preventDefault();
+            const form = this;
+            const data = {
+                checkInTime: form.checkInTime.value,
+                checkOutTime: form.checkOutTime.value
+            };
+
+            fetch(`http://localhost:3000/attendance/${memberID}/${date}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            })
+            .then(res => {
+                if (res.ok) {
+                    alert("Attendance updated successfully");
+                    window.location.href = "attendanceIndex.html"; // Redirect to attendance list
+                } else {
+                    alert("Failed to update attendance");
+                }
+            })
+            .catch(err => {
+                console.error("Error updating attendance:", err);
+                alert("Failed to update attendance.");
+            });
+        });
+    </script>
+</body>
+</html>

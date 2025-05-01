@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: radial-gradient(circle at top left, #111111 0%, #000000 100%);
+      background-image: url('./dashboard.jpg');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+
+    .glass {
+      background: rgba(0, 0, 0, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+    }
+
+    .text-glow {
+      text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+    }
+  </style>
+</head>
+<body class="min-h-screen text-white font-sans">
+
+  <!-- Header -->
+  <header class="flex items-center justify-between px-8 py-4 border-b border-red-600 bg-black bg-opacity-70">
+    <h1 class="text-3xl font-bold text-red-500 text-glow">Admin Dashboard</h1>
+    <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition">Logout</button>
+  </header>
+
+  <!-- Main Content -->
+  <main class="p-8 space-y-6">
+
+    <!-- Admin Info Card -->
+    <section class="glass p-6 rounded-2xl shadow-lg">
+      <h2 class="text-2xl font-semibold mb-4 border-b border-red-500 pb-2 text-red-400">Profile Information</h2>
+      <div id="adminInfo" class="space-y-2 text-lg">
+        <!-- Fetched admin info will be inserted here -->
+      </div>
+    </section>
+
+    <!-- Navigation Buttons -->
+    <section class="glass p-6 rounded-2xl shadow-lg">
+      <h2 class="text-2xl font-semibold mb-4 border-b border-red-500 pb-2 text-red-400">Dashboard Navigation</h2>
+      <div id="dashboardLinks" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <button onclick="window.location.href='manageUsers.html'" class="bg-red-700 hover:bg-red-800 px-4 py-2 rounded shadow">Manage Users</button>
+        <button onclick="window.location.href='manageMembers.html'" class="bg-red-700 hover:bg-red-800 px-4 py-2 rounded shadow">Manage Members</button>
+        <button onclick="window.location.href='trainerIndex.html'" class="bg-red-700 hover:bg-red-800 px-4 py-2 rounded shadow">Trainer Management</button>
+        <button onclick="window.location.href='attendanceIndex.html'" class="bg-red-700 hover:bg-red-800 px-4 py-2 rounded shadow">Attendance</button>
+        <button onclick="window.location.href='bookingIndex.html'" class="bg-red-700 hover:bg-red-800 px-4 py-2 rounded shadow">Bookings</button>
+        <button onclick="window.location.href='equipmentIndex.html'" class="bg-red-700 hover:bg-red-800 px-4 py-2 rounded shadow">Equipment</button>
+        <button onclick="window.location.href='trainerSchedulesIndex.html'" class="bg-red-700 hover:bg-red-800 px-4 py-2 rounded shadow">Trainer Schedules</button>
+        <button onclick="window.location.href='workoutSessionIndex.html'" class="bg-red-700 hover:bg-red-800 px-4 py-2 rounded shadow">Workout Sessions</button>
+        <button onclick="window.location.href='expenseIndex.html'" class="bg-red-700 hover:bg-red-800 px-4 py-2 rounded shadow">Expenses</button>
+        <button onclick="window.location.href='paymentHistoryIndex.html'" class="bg-red-700 hover:bg-red-800 px-4 py-2 rounded shadow">Payment History</button>
+        <button onclick="window.location.href='productInventoryIndex.html'" class="bg-red-700 hover:bg-red-800 px-4 py-2 rounded shadow">Product Inventory</button>
+        <button onclick="window.location.href='salesIndex.html'" class="bg-red-700 hover:bg-red-800 px-4 py-2 rounded shadow">Sales</button>
+        <button onclick="window.location.href='supplierIndex.html'" class="bg-red-700 hover:bg-red-800 px-4 py-2 rounded shadow">Suppliers</button>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    document.getElementById("logoutBtn").addEventListener("click", function () {
+      localStorage.removeItem("token");
+      window.location.href = "login.html";
+    });
+
+    const token = localStorage.getItem("token");
+    if (!token) window.location.href = "login.html";
+
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (payload.role.toLowerCase() !== "admin") {
+      alert("Unauthorized access!");
+      window.location.href = "login.html";
+    }
+
+    const userID = payload.userID;
+
+    fetch(`http://localhost:3000/dashboard/${userID}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("adminInfo").innerHTML = `
+          <p><strong>Name:</strong> ${data.name}</p>
+          <p><strong>Email:</strong> ${data.email}</p>
+          <p><strong>Phone:</strong> ${data.phone}</p>
+          <p><strong>Role:</strong> ${data.role}</p>
+        `;
+      })
+      .catch(err => {
+        console.error("Fetch error:", err);
+        alert("Error fetching admin data.");
+      });
+  </script>
+</body>
+</html>

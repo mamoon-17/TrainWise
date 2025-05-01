@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Sale</title>
+    <link rel="stylesheet" href="salesIndex.css"> <!-- Link to your CSS -->
+</head>
+<body>
+    <h1>Add New Sale</h1>
+    <form id="salesForm">
+        <label>Sale ID: <input type="number" name="saleID" required></label><br><br>
+        <label>Product Name: <input type="text" name="productName" required></label><br><br>
+        <label>Amount: <input type="number" step="0.01" name="amount" required></label><br><br>
+        <label>Sale Date: <input type="date" name="saleDate" required></label><br><br>
+        <button type="submit">Add Sale</button>
+    </form>
+
+    <script>
+        // ✅ Admin-only access check using JWT from localStorage
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Please log in first.");
+            window.location.href = "login.html";
+        }
+
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            if (payload.role.toLowerCase() !== "admin") {
+                alert("Unauthorized access. Admins only.");
+                window.location.href = "login.html";
+            }
+        } catch (err) {
+            alert("Invalid token. Please log in again.");
+            window.location.href = "login.html";
+        }
+
+        // 🌐 Form submission logic
+        document.getElementById('salesForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const form = e.target;
+            const data = {
+                saleID: form.saleID.value,
+                productName: form.productName.value,
+                amount: form.amount.value,
+                saleDate: form.saleDate.value
+            };
+
+            const res = await fetch("http://localhost:3000/sales", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                alert("Sale added successfully");
+                form.reset();
+            } else {
+                const err = await res.text();
+                alert("Failed to add sale: " + err);
+            }
+        });
+    </script>
+</body>
+</html>

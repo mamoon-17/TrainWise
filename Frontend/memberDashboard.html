@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Member Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        html, body {
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle at top left, #111111 0%, #000000 100%);
+            background-image: url('./dashboard.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: scroll;
+            background-repeat: no-repeat;
+            overflow-x: hidden;
+            overscroll-behavior: contain;
+        }
+
+        body {
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #000;
+            z-index: -1;
+        }
+
+        .glass {
+            background: rgba(0, 0, 0, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .text-glow {
+            text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+        }
+
+        table th, table td {
+            border-bottom: 1px solid #444;
+        }
+
+        .overflow-x-auto {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-white font-sans">
+    <!-- Header -->
+    <header class="flex items-center justify-between px-8 py-4 border-b border-red-600 bg-black bg-opacity-70">
+        <h1 class="text-3xl font-bold text-red-500 text-glow">Member Dashboard</h1>
+        <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition">Logout</button>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex flex-col gap-6 p-8">
+        <!-- Member Info Card -->
+        <section class="glass p-6 rounded-2xl shadow-lg">
+            <h2 class="text-2xl font-semibold mb-4 border-b border-red-500 pb-2 text-red-400">Profile Information</h2>
+            <div id="memberInfo" class="space-y-2 text-lg">
+                <!-- Fetched member info will be inserted here -->
+            </div>
+        </section>
+
+        <!-- Action Buttons -->
+        <section class="glass p-6 rounded-2xl shadow-lg">
+            <div class="flex flex-wrap gap-4">
+                <button id="resetPasswordBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition">Reset Password</button>
+                <button id="cancelMembershipBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition">Cancel Membership</button>
+                <button id="checkInBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition">Check In</button>
+                <a href="productInventoryIndex.html">
+                    <button id="productInventoryBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition">Product Inventory</button>
+                </a>
+            </div>
+        </section>
+
+        <!-- Attendance Section -->
+        <section class="glass p-6 rounded-2xl shadow-lg">
+            <h2 class="text-2xl font-semibold mb-4 border-b border-red-500 pb-2 text-red-400">Your Attendance</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left table-auto border-collapse border-separate border-spacing-y-4">
+                    <thead>
+                        <tr class="text-red-400">
+                            <th class="pb-2">Date</th>
+                            <th class="pb-2">Check-in Time</th>
+                            <th class="pb-2">Check-out Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceTableBody" class="text-sm">
+                        <!-- Attendance rows will be dynamically added here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const token = localStorage.getItem("token");
+        if (!token) window.location.href = "login.html";
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.role.toLowerCase() !== "member") {
+            alert("Unauthorized access!");
+            window.location.href = "login.html";
+        }
+        const userID = payload.userID;
+
+        // Format the time in 24-hour or 12-hour format
+        function formatTime(time) {
+            if (!time) return "-";
+            
+            const [hours, minutes] = time.split(':').map(Number);
+            const date = new Date();
+            date.setHours(hours || 0, minutes || 0);
+            
+            return date.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+
+        // Fetch Member Info
+        fetch(`http://localhost:3000/dashboard/${userID}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById("memberInfo").innerHTML = `
+                <p><strong>Name:</strong> ${data.name}</p>
+                <p><strong>Email:</strong> ${data.email}</p>
+                <p><strong>Phone:</strong> ${data.phone}</p>
+                <p><strong>Membership Type:</strong> ${data.membershipType}</p>
+                <p><strong>Registration Date:</strong> ${new Date(data.registrationDate).toLocaleDateString()}</p>
+            `;
+        })
+        .catch(err => {
+            console.error("Fetch error:", err);
+            alert("Error fetching member data.");
+        });
+
+        // Check In
+        document.getElementById("checkInBtn").addEventListener("click", function () {
+            const currentDate = new Date().toISOString().split('T')[0];
+            const currentTime = new Date().toISOString().split('T')[1].split('.')[0];
+            const formattedTime = formatTime(currentTime);
+            
+            fetch(`http://localhost:3000/check-in-attendance`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    memberID: userID,
+                    date: currentDate,
+                    checkInTime: formattedTime
+                })
+            })
+            .then(res => res.ok ? alert("Attendance checked in successfully!") : alert("Failed to check in attendance."))
+            .catch(err => {
+                console.error("Error checking in attendance:", err);
+                alert("Error checking in attendance.");
+            });
+        });
+
+        // Fetch Attendance
+        fetch(`http://localhost:3000/member-attendance/${userID}`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        })
+        .then(res => res.json())
+        .then(data => {
+            const tbody = document.getElementById("attendanceTableBody");
+            data.forEach(att => {
+                const formattedCheckIn = formatTime(att.checkInTime);
+                const formattedCheckOut = formatTime(att.checkOutTime);
+                const row = `
+                    <tr class="hover:bg-red-900 transition">
+                        <td class="py-2">${new Date(att.date).toLocaleDateString()}</td>
+                        <td class="py-2">${formattedCheckIn}</td>
+                        <td class="py-2">${formattedCheckOut || "Not Checked Out"}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        })
+        .catch(err => {
+            console.error("Error fetching past attendance:", err);
+            alert("Error fetching past attendance.");
+        });
+
+        // Reset Password
+        document.getElementById("resetPasswordBtn").addEventListener("click", function () {
+            const newPassword = prompt("Enter a new password:");
+            if (newPassword) {
+                fetch(`http://localhost:3000/users/${userID}/reset-password`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ newPassword })
+                })
+                .then(res => res.ok ? alert("Password updated successfully!") : alert("Failed to update password."))
+                .catch(err => {
+                    console.error("Error resetting password:", err);
+                    alert("Error resetting password.");
+                });
+            }
+        });
+
+        // Cancel Membership
+        document.getElementById("cancelMembershipBtn").addEventListener("click", function () {
+            if (confirm("Are you sure you want to cancel your membership? This will delete your account.")) {
+                fetch(`http://localhost:3000/memberships/${userID}`, {
+                    method: "DELETE",
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    }
+                })
+                .then(res => {
+                    if (res.ok) {
+                        alert("Membership cancelled successfully.");
+                        localStorage.removeItem("token");
+                        window.location.href = "login.html";
+                    } else {
+                        alert("Failed to cancel membership.");
+                    }
+                })
+                .catch(err => {
+                    console.error("Error cancelling membership:", err);
+                    alert("Error cancelling membership.");
+                });
+            }
+        });
+
+        // Logout
+        document.getElementById("logoutBtn").addEventListener("click", function () {
+            localStorage.removeItem("token");
+            window.location.href = "login.html";
+        });
+    </script>
+</body>
+</html>

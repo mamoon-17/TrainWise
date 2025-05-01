@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trainer Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        html, body {
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle at top left, #111111 0%, #000000 100%);
+            background-image: url('./dashboard.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: scroll;
+            background-repeat: no-repeat;
+            overflow-x: hidden;
+            overscroll-behavior: contain;
+        }
+
+        body {
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #000;
+            z-index: -1;
+        }
+
+        .glass {
+            background: rgba(0, 0, 0, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .text-glow {
+            text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+        }
+
+        table th, table td {
+            border-bottom: 1px solid #444;
+        }
+
+        .overflow-x-auto {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-white font-sans">
+    <!-- Header -->
+    <header class="flex items-center justify-between px-8 py-4 border-b border-red-600 bg-black bg-opacity-70">
+        <h1 class="text-3xl font-bold text-red-500 text-glow">Trainer Dashboard</h1>
+        <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition">Logout</button>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex flex-col gap-6 p-8">
+        <!-- Trainer Info Card -->
+        <section class="glass p-6 rounded-2xl shadow-lg">
+            <h2 class="text-2xl font-semibold mb-4 border-b border-red-500 pb-2 text-red-400">Trainer Information</h2>
+            <div id="trainerInfo" class="space-y-2 text-lg">
+                <!-- Fetched trainer info will be inserted here -->
+            </div>
+        </section>
+
+        <!-- Schedule Section -->
+        <section class="glass p-6 rounded-2xl shadow-lg">
+            <h2 class="text-2xl font-semibold mb-4 border-b border-red-500 pb-2 text-red-400">Trainer Schedule</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left table-auto border-collapse border-separate border-spacing-y-4">
+                    <thead>
+                        <tr class="text-red-400">
+                            <th class="pb-2">Available Days</th>
+                            <th class="pb-2">Start Time</th>
+                            <th class="pb-2">End Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trainerSchedule" class="text-sm">
+                        <!-- Schedule rows will be dynamically added here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const token = localStorage.getItem("token");
+        if (!token) window.location.href = "login.html";
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.role.toLowerCase() !== "trainer") {
+            alert("Unauthorized access!");
+            window.location.href = "login.html";
+        }
+        const userID = payload.userID;
+
+        function formatTime(time) {
+            if (!time) return "-";
+            const [hours, minutes] = time.split(':').map(Number);
+            const date = new Date();
+            date.setHours(hours || 0, minutes || 0);
+            return date.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+
+        fetch(`http://localhost:3000/dashboard/${userID}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById("trainerInfo").innerHTML = `
+                <p><strong>Name:</strong> ${data.name}</p>
+                <p><strong>Email:</strong> ${data.email}</p>
+                <p><strong>Phone:</strong> ${data.phone}</p>
+                <p><strong>Specialization:</strong> ${data.specialization}</p>
+            `;
+        })
+        .catch(err => {
+            console.error("Fetch error:", err);
+            alert("Error fetching trainer data.");
+        });
+
+        fetch(`http://localhost:3000/trainer-schedule/${userID}`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        })
+        .then(res => res.json())
+        .then(schedule => {
+            const container = document.getElementById("trainerSchedule");
+            if (Array.isArray(schedule) && schedule.length > 0) {
+                container.innerHTML = schedule.map(s => `
+                    <tr>
+                        <td class="py-2">${s.availableDays}</td>
+                        <td class="py-2">${formatTime(s.startTime)}</td>
+                        <td class="py-2">${formatTime(s.endTime)}</td>
+                    </tr>
+                `).join('');
+            } else {
+                container.innerHTML = "<tr><td colspan='3' class='py-2 text-center'>No schedule available.</td></tr>";
+            }
+        })
+        .catch(err => {
+            console.error("Schedule fetch error:", err);
+            alert("Error fetching schedule.");
+        });
+
+        document.getElementById("logoutBtn").addEventListener("click", () => {
+            localStorage.removeItem("token");
+            window.location.href = "login.html";
+        });
+    </script>
+</body>
+</html>

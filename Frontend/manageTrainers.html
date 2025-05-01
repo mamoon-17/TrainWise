@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Trainers</title>
+    <link rel="stylesheet" href="manageTrainers.css">
+</head>
+<body>
+    <h1>Manage Trainers</h1>
+    <button onclick="window.location.href='addTrainer.html'">Add New Trainer</button>
+    <br><br>
+
+    <!-- Trainer Table -->
+    <table border="1" id="trainerTable">
+        <thead>
+            <tr>
+                <th>Trainer ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Specialization</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="trainerTableBody">
+            <!-- Trainer rows will be dynamically added here -->
+        </tbody>
+    </table>
+
+    <script>
+        // Function to load trainer data
+        async function loadTrainers() {
+            try {
+                // Fetch the trainer data from the backend without the token check
+                const response = await fetch("http://localhost:3000/trainers", {
+                    method: "GET",
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to fetch trainers");
+                }
+
+                const trainers = await response.json();
+
+                // Check if there are no trainers
+                if (trainers.length === 0) {
+                    document.getElementById("trainerTableBody").innerHTML = "<tr><td colspan='6'>No trainers found</td></tr>";
+                    return;
+                }
+
+                // Populate the table with trainer data
+                const tbody = document.getElementById("trainerTableBody");
+                trainers.forEach(trainer => {
+                    const row = `
+                        <tr>
+                            <td>${trainer.trainerID}</td>
+                            <td>${trainer.name}</td>
+                            <td>${trainer.email}</td>
+                            <td>${trainer.phone}</td>
+                            <td>${trainer.specialization}</td>
+                            <td>
+                                <a href="editTrainer.html?id=${trainer.trainerID}">Edit</a> |
+                                <button onclick="deleteTrainer(${trainer.trainerID})">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            } catch (error) {
+                console.error("Error loading trainer data:", error);
+                alert("Error loading trainer data.");
+            }
+        }
+
+        // Delete trainer function
+        async function deleteTrainer(trainerID) {
+            const confirmation = confirm("Are you sure you want to delete this trainer?");
+            if (confirmation) {
+                try {
+                    const response = await fetch(`http://localhost:3000/trainers/${trainerID}`, {
+                        method: "DELETE",
+                    });
+
+                    if (response.ok) {
+                        alert("Trainer deleted successfully");
+                        loadTrainers();  // Reload the trainers table after deletion
+                    } else {
+                        alert("Failed to delete trainer");
+                    }
+                } catch (error) {
+                    console.error("Error deleting trainer:", error);
+                    alert("Error deleting trainer.");
+                }
+            }
+        }
+
+        // Load trainers on page load
+        window.onload = loadTrainers;
+    </script>
+</body>
+</html>

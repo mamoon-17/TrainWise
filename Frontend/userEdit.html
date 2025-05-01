@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Edit User</title>
+  <link rel="stylesheet" href="manageUsers.css">
+</head>
+<body>
+  <h1>Update User</h1>
+
+  <form id="editForm">
+    <label>User ID (to update): <input type="text" id="userID" required></label><br><br>
+    <label>New Name: <input type="text" id="name" required></label><br><br>
+    <label>New Email: <input type="email" id="email" required></label><br><br>
+    <label>New Phone: <input type="text" id="phone" required></label><br><br>
+    <label>New Role: <input type="text" id="role" required></label><br><br>
+    <button type="submit">Update</button>
+  </form>
+
+  <p id="responseMsg"></p>
+
+  <script>
+    // Check if user is logged in and if they are an admin
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      // No token, redirect to login
+      window.location.href = "login.html";
+    }
+
+    const payload = JSON.parse(atob(token.split('.')[1]));
+
+    // If the role is not 'admin', redirect to a page like 'unauthorized.html' or 'login.html'
+    if (payload.role.toLowerCase() !== "admin") {
+      alert("Unauthorized access!");
+      window.location.href = "login.html";  // Or redirect to any unauthorized page
+    }
+
+    // Handling form submission to update a user
+    document.getElementById("editForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const userID = document.getElementById("userID").value;
+      const userData = {
+        name: document.getElementById("name").value,
+        email: document.getElementById("email").value,
+        phone: document.getElementById("phone").value,
+        role: document.getElementById("role").value
+      };
+
+      try {
+        const res = await fetch(`http://localhost:3000/users/${userID}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(userData)
+        });
+
+        const text = await res.text();
+        document.getElementById("responseMsg").innerText = text;
+      } catch (err) {
+        document.getElementById("responseMsg").innerText = "Error updating user.";
+      }
+    });
+  </script>
+</body>
+</html>

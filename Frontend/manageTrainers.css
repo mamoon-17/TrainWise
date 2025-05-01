@@ -1,0 +1,102 @@
+/* trainerStyle.css */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  body {
+    background: linear-gradient(to bottom right, #141414, #2c3e50);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+  
+  h1 {
+    font-size: 36px;
+    color: #3498db;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  
+  /* Add New Trainer Button */
+  button {
+    background-color: #2980b9;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.3s ease;
+  }
+  
+  button:hover {
+    background-color: #3498db;
+  }
+  
+  /* Table Styles */
+  table {
+    width: 100%;
+    max-width: 1000px;
+    margin-top: 30px;
+    border-collapse: collapse;
+    background-color: #222;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.6);
+  }
+  
+  th, td {
+    padding: 15px;
+    text-align: left;
+    color: white;
+  }
+  
+  th {
+    background-color: #333;
+  }
+  
+  td {
+    background-color: #2a2a2a;
+  }
+  
+  tr:nth-child(even) td {
+    background-color: #3a3a3a;
+  }
+  
+  /* Action Links and Buttons */
+  td a, td button {
+    color: #3498db;
+    font-weight: bold;
+    text-decoration: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+  
+  td a:hover, td button:hover {
+    color: #5dade2;
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    h1 {
+      font-size: 28px;
+    }
+  
+    table, th, td {
+      font-size: 14px;
+    }
+  
+    button {
+      padding: 10px 16px;
+    }
+  }
+  

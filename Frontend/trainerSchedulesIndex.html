@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trainer Schedules</title>
+    <link rel="stylesheet" href="trainerSchedulesIndex.css"> <!-- Link to your CSS -->
+</head>      
+<body>
+    <h1>All Trainer Schedules</h1>
+    <a href="trainerScheduleAdd.html">Add New Schedule</a>
+    <br><br>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Schedule ID</th>
+                <th>Trainer ID</th>
+                <th>Available Days</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="trainerScheduleTableBody">
+            <!-- Trainer Schedule rows will be added here -->
+        </tbody>
+    </table>
+
+    <script>
+        // ✅ Admin authentication check
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Please log in as an admin to access this page.");
+            window.location.href = "login.html";
+        }
+
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.role.toLowerCase() !== "admin") {
+            alert("Unauthorized access! Only admins can access this page.");
+            window.location.href = "login.html";
+        }
+
+        // ✅ Fetch schedules
+        fetch("http://localhost:3000/trainerSchedules", {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        })
+        .then(res => res.json())
+        .then(schedules => {
+            const tbody = document.getElementById("trainerScheduleTableBody");
+
+            schedules.forEach(schedule => {
+                const row = `
+                    <tr>
+                        <td>${schedule.scheduleID}</td>
+                        <td>${schedule.trainerID}</td>
+                        <td>${schedule.availableDays}</td>
+                        <td>${new Date(schedule.startTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</td>
+                        <td>${new Date(schedule.endTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</td>
+
+                        <td>
+                            <a href="trainerScheduleEdit.html?scheduleID=${schedule.scheduleID}">Edit</a> |
+                            <button onclick="deleteSchedule('${schedule.scheduleID}')">Delete</button>
+                        </td>
+                    </tr>`;
+                tbody.innerHTML += row;
+            });
+        })
+        .catch(error => {
+            console.error("❌ Error fetching schedules:", error);
+            alert("Failed to load schedules.");
+        });
+
+        // ✅ Delete schedule
+        function deleteSchedule(scheduleID) {
+            if (confirm("Are you sure you want to delete this schedule?")) {
+                fetch(`http://localhost:3000/trainerSchedules/${scheduleID}`, {
+                    method: "DELETE",
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    }
+                })
+                .then(res => {
+                    if (res.ok) {
+                        alert("Trainer schedule deleted successfully");
+                        location.reload();
+                    } else {
+                        alert("Failed to delete schedule");
+                    }
+                })
+                .catch(error => {
+                    console.error("❌ Error deleting schedule:", error);
+                    alert("Failed to delete schedule.");
+                });
+            }
+        }
+    </script>
+</body>
+</html>

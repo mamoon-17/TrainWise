@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Edit Member</title>
+  <link rel="stylesheet" href="manageMembers.css">
+  <style>
+    .readonly {
+      background-color: #f0f0f0;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <h1>Edit Member</h1>
+  <form id="memberForm">
+    <label>Name:</label><br>
+    <input type="text" name="name" class="readonly" readonly><br><br>
+
+    <label>Email:</label><br>
+    <input type="email" name="email" class="readonly" readonly><br><br>
+
+    <label>Phone:</label><br>
+    <input type="text" name="phone" class="readonly" readonly><br><br>
+
+    <label>Membership Type:</label><br>
+    <input type="text" name="membershipType" required><br><br>
+
+    <label>Start Date:</label><br>
+    <input type="date" name="start_date" required><br><br>
+
+    <label>End Date:</label><br>
+    <input type="date" name="end_date" required><br><br>
+
+    <button type="submit">Update Member</button>
+  </form>
+
+  <script>
+    // Admin check - Ensure only admin users can access this page
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      // No token, redirect to login
+      window.location.href = "login.html";
+    }
+
+    const payload = JSON.parse(atob(token.split('.')[1]));
+
+    // If the role is not 'admin', redirect to a page like 'unauthorized.html' or 'login.html'
+    if (payload.role.toLowerCase() !== "admin") {
+      alert("Unauthorized access!");
+      window.location.href = "login.html";  // Or redirect to any unauthorized page
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const memberID = params.get("id");
+
+    if (!memberID) {
+      alert("No member ID found in URL.");
+      throw new Error("Missing memberID");
+    }
+
+    // Fetch member details and fill form
+    fetch(`http://localhost:3000/member/${memberID}`)
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to fetch member data");
+        return res.json();
+      })
+      .then(member => {
+        const form = document.forms["memberForm"];
+        form.name.value = member.name || "";
+        form.email.value = member.email || "";
+        form.phone.value = member.phone || "";
+        form.membershipType.value = member.membershipType || "";
+        form.start_date.value = member.start_date?.split("T")[0] || "";
+        form.end_date.value = member.end_date?.split("T")[0] || "";
+      })
+      .catch(err => {
+        console.error("❌ Error fetching member data:", err);
+        alert("Failed to load member details.");
+      });
+
+    // Submit form
+    document.getElementById("memberForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const form = this;
+
+      const data = {
+        membershipType: form.membershipType.value,
+        start_date: form.start_date.value,
+        end_date: form.end_date.value
+      };
+
+      fetch(`http://localhost:3000/member/${memberID}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Update failed");
+        alert("✅ Member updated successfully");
+        window.location.href = "manageMembers.html";
+      })
+      .catch(err => {
+        console.error("❌ Error updating member:", err);
+        alert("Failed to update member.");
+      });
+    });
+  </script>
+</body>
+</html>

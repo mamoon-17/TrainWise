@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Workout Session</title>
+    <link rel="stylesheet" href="workoutSessionIndex.css"> <!-- Link to your CSS -->
+</head>
+<body>
+    <h1>Edit Workout Session</h1>
+    <form id="workoutSessionForm">
+        <label>Session ID:</label><br>
+        <input type="number" name="sessionID" readonly><br><br>
+
+        <label>Trainer ID:</label><br>
+        <input type="number" name="trainerID" required><br><br>
+
+        <label>Session Type:</label><br>
+        <input type="text" name="sessionType" required><br><br>
+
+        <label>Session Date:</label><br>
+        <input type="date" name="sessionDate" required><br><br>
+
+        <label>Start Time:</label><br>
+        <input type="time" name="startTime" required><br><br>
+
+        <label>End Time:</label><br>
+        <input type="time" name="endTime"><br><br>
+
+        <button type="submit">Update Session</button>
+    </form>
+
+    <script>
+        // ✅ Admin protection logic
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Please log in first.");
+            window.location.href = "login.html";
+        }
+
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.role.toLowerCase() !== "admin") {
+            alert("Unauthorized access. Admins only.");
+            window.location.href = "login.html";
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        const sessionID = params.get("sessionID");
+
+        // ✅ Load session details
+        fetch(`http://localhost:3000/workoutSessions/${sessionID}`, {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        })
+        .then(res => {
+            if (!res.ok) throw new Error("Failed to fetch session details");
+            return res.json();
+        })
+        .then(session => {
+            const form = document.forms["workoutSessionForm"];
+            form.sessionID.value = session.sessionID;
+            form.trainerID.value = session.trainerID;
+            form.sessionType.value = session.sessionType;
+            form.sessionDate.value = session.sessionDate;
+            form.startTime.value = session.startTime;
+            form.endTime.value = session.endTime || '';
+        })
+        .catch(err => {
+            console.error("Error loading session:", err);
+            alert("Error loading workout session data.");
+        });
+
+        // ✅ Handle update submission
+        document.getElementById("workoutSessionForm").addEventListener("submit", function(e) {
+            e.preventDefault();
+            const form = this;
+            const data = {
+                trainerID: form.trainerID.value,
+                sessionType: form.sessionType.value,
+                sessionDate: form.sessionDate.value,
+                startTime: form.startTime.value,
+                endTime: form.endTime.value
+            };
+
+            fetch(`http://localhost:3000/workoutSessions/${sessionID}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify(data)
+            })
+            .then(res => {
+                if (res.ok) {
+                    alert("Workout session updated successfully");
+                    window.location.href = "workoutSessionIndex.html";
+                } else {
+                    alert("Failed to update session");
+                }
+            })
+            .catch(err => {
+                console.error("Update error:", err);
+                alert("Error updating session.");
+            });
+        });
+    </script>
+</body>
+</html>

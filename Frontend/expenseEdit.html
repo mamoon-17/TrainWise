@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Expense</title>
+    <link rel="stylesheet" href="expenseIndex.css"> <!-- Link to your CSS -->
+</head>
+<body>
+    <h1>Edit Expense</h1>
+    <form id="expenseForm">
+        <label>Expense ID:</label><br>
+        <input type="number" name="expenseID" required readonly><br><br>
+
+        <label>Category:</label><br>
+        <input type="text" name="category" required><br><br>
+
+        <label>Amount:</label><br>
+        <input type="number" step="0.01" name="amount" required><br><br>
+
+        <label>Expense Date:</label><br>
+        <input type="date" name="expenseDate" required><br><br>
+
+        <label>Description:</label><br>
+        <textarea name="description" required></textarea><br><br>
+
+        <button type="submit">Update Expense</button>
+    </form>
+
+    <script>
+        // ✅ Admin-only access check
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Please log in first.");
+            window.location.href = "login.html";
+        }
+
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.role.toLowerCase() !== "admin") {
+            alert("Unauthorized access. Admins only.");
+            window.location.href = "login.html";
+        }
+
+        // ✅ Fetch expense details
+        const params = new URLSearchParams(window.location.search);
+        const expenseID = params.get("id");
+
+        fetch(`http://localhost:3000/expenses/${expenseID}`, {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        })
+            .then(res => res.json())
+            .then(expense => {
+                const form = document.forms["expenseForm"];
+                form.expenseID.value = expense.expenseID;
+                form.category.value = expense.category;
+                form.amount.value = expense.amount;
+                form.expenseDate.value = expense.expenseDate;
+                form.description.value = expense.description;
+            })
+            .catch(err => {
+                console.error("Error fetching expense data:", err);
+                alert("Failed to load expense details.");
+            });
+
+        // ✅ Handle form submission to update expense
+        document.getElementById("expenseForm").addEventListener("submit", function (e) {
+            e.preventDefault();
+            const form = this;
+            const data = {
+                category: form.category.value,
+                amount: form.amount.value,
+                expenseDate: form.expenseDate.value,
+                description: form.description.value
+            };
+
+            fetch(`http://localhost:3000/expenses/${expenseID}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify(data)
+            })
+                .then(res => {
+                    if (res.ok) {
+                        alert("Expense updated successfully");
+                        window.location.href = "expenseIndex.html";
+                    } else {
+                        alert("Failed to update expense");
+                    }
+                });
+        });
+    </script>
+</body>
+</html>

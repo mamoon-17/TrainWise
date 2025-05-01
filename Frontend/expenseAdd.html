@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Expense</title>
+    <link rel="stylesheet" href="expenseIndex.css"> <!-- Link to your CSS -->
+</head>
+<body>
+    <h1>Add New Expense</h1>
+    <form id="expenseForm">
+        <label>Expense ID: <input type="number" name="expenseID" required></label><br><br>
+        <label>Category: <input type="text" name="category" required></label><br><br>
+        <label>Amount: <input type="number" step="0.01" name="amount" required></label><br><br>
+        <label>Expense Date: <input type="date" name="expenseDate" required></label><br><br>
+        <label>Description: <textarea name="description" required></textarea></label><br><br>
+        <button type="submit">Add Expense</button>
+    </form>
+
+    <script>
+        // ✅ Admin-only access check
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Please log in first.");
+            window.location.href = "login.html";
+        }
+
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.role.toLowerCase() !== "admin") {
+            alert("Unauthorized access. Admins only.");
+            window.location.href = "login.html";
+        }
+
+        // ✅ Handle form submission to add a new expense
+        document.getElementById('expenseForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const form = e.target;
+            const data = {
+                expenseID: form.expenseID.value,
+                category: form.category.value,
+                amount: form.amount.value,
+                expenseDate: form.expenseDate.value,
+                description: form.description.value
+            };
+
+            const res = await fetch("http://localhost:3000/expenses", {
+                method: "POST",
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`  // Include JWT token in the request
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                alert("Expense added successfully");
+                form.reset();
+            } else {
+                const err = await res.text();
+                alert("Failed to add expense: " + err);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New Trainer</title>
+    <link rel="stylesheet" href="userStyle.css">
+</head>
+<body>
+    <h1>Add New Trainer</h1>
+    <form id="addTrainerForm">
+        <!-- Trainer ID Input -->
+        <label for="trainerID">Trainer ID (User ID):</label>
+        <input type="number" id="trainerID" name="trainerID" required /><br><br>
+
+        <!-- Automatically filled Name -->
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" disabled /><br><br>
+
+        <!-- Automatically filled Email -->
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" disabled /><br><br>
+
+        <!-- Automatically filled Phone -->
+        <label for="phone">Phone:</label>
+        <input type="text" id="phone" name="phone" disabled /><br><br>
+
+        <!-- Specialization Input -->
+        <label for="specialization">Specialization:</label>
+        <input type="text" id="specialization" name="specialization" required /><br><br>
+
+        <button type="submit">Add Trainer</button>
+    </form>
+
+    <script>
+        document.getElementById("trainerID").addEventListener("blur", async function() {
+            const trainerID = document.getElementById("trainerID").value;
+            if (trainerID) {
+                const token = localStorage.getItem("token");
+                if (!token) {
+                    window.location.href = "login.html"; // Redirect if no token
+                }
+
+                try {
+                    // Fetch the user's details using the trainerID (which is the userID)
+                    const response = await fetch(`http://localhost:3000/users/${trainerID}`, {
+                        method: "GET",
+                        headers: {
+                            "Authorization": `Bearer ${token}`  // Send token for authentication
+                        }
+                    });
+
+                    const user = await response.json();
+
+                    // Fill the form fields with the user data
+                    document.getElementById("name").value = user.name;
+                    document.getElementById("email").value = user.email;
+                    document.getElementById("phone").value = user.phone;
+                } catch (error) {
+                    console.error("Error fetching user data:", error);
+                    alert("User not found. Please check the Trainer ID.");
+                }
+            }
+        });
+
+        document.getElementById("addTrainerForm").addEventListener("submit", async function(e) {
+            e.preventDefault();
+
+            const trainerID = document.getElementById("trainerID").value;
+            const name = document.getElementById("name").value;
+            const email = document.getElementById("email").value;
+            const phone = document.getElementById("phone").value;
+            const specialization = document.getElementById("specialization").value;
+
+            const token = localStorage.getItem("token");
+            if (!token) {
+                window.location.href = "login.html"; // Redirect if no token
+            }
+
+            // Send the new trainer data to the backend
+            const response = await fetch("http://localhost:3000/admin/addTrainer", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`  // Send token for authentication
+                },
+                body: JSON.stringify({ trainerID, name, email, phone, specialization })
+            });
+
+            if (response.ok) {
+                alert("Trainer added successfully");
+                window.location.href = "manageTrainers.html";  // Redirect to manage trainers page
+            } else {
+                alert("Failed to add trainer. Please try again.");
+            }
+        });
+    </script>
+</body>
+</html>

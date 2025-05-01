@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Payment</title>
+    <link rel="stylesheet" href="paymentHistoryIndex.css"> <!-- Link to your CSS -->
+</head>
+<body>
+    <h1>Add New Payment</h1>
+    <form id="paymentForm">
+        <label>Payment ID: <input type="number" name="paymentID" required></label><br><br>
+        <label>Member ID (must be a valid memberID): <input type="number" name="memberID" required></label><br><br>
+        <label>Amount: <input type="number" step="0.01" name="amount" required></label><br><br>
+        <label>Payment Method: 
+            <select name="paymentMethod" required>
+                <option value="">Select</option>
+                <option value="Card">Card</option>
+                <option value="Cash">Cash</option>
+            </select>
+        </label><br><br>
+        <label>Payment Date: <input type="date" name="paymentDate" required></label><br><br>
+        <button type="submit">Add Payment</button>
+    </form>
+
+    <script>
+        // ✅ Admin-only access check
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Please log in first.");
+            window.location.href = "login.html"; // Redirect to login page if no token
+        }
+
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.role.toLowerCase() !== "admin") {
+            alert("Unauthorized access. Admins only.");
+            window.location.href = "login.html"; // Redirect to login page if user is not admin
+        }
+
+        // Handle the form submission
+        document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const form = e.target;
+            const data = {
+                paymentID: form.paymentID.value,
+                memberID: form.memberID.value,
+                amount: form.amount.value,
+                paymentMethod: form.paymentMethod.value,
+                paymentDate: form.paymentDate.value
+            };
+
+            // POST request to add new payment
+            const res = await fetch("http://localhost:3000/paymentHistory", {
+                method: "POST",
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`  // Include the JWT token for authorization
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                alert("Payment added successfully");
+                form.reset();
+            } else {
+                const err = await res.text();
+                alert("Failed to add payment: " + err);
+            }
+        });
+    </script>
+</body>
+</html>

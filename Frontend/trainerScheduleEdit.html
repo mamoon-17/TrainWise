@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Trainer Schedule</title>
+    <link rel="stylesheet" href="trainerSchedulesIndex.css"> <!-- Link to your CSS -->
+</head>
+<body>
+    <h1>Edit Trainer Schedule</h1>
+    <form id="trainerScheduleForm">
+        <label>Schedule ID:</label><br>
+        <input type="number" name="scheduleID" readonly><br><br>
+
+        <label>Trainer ID:</label><br>
+        <input type="number" name="trainerID" required><br><br>
+
+        <label>Available Days:</label><br>
+        <input type="text" name="availableDays" required><br><br>
+
+        <label>Start Time:</label><br>
+        <input type="time" name="startTime" required><br><br>
+
+        <label>End Time:</label><br>
+        <input type="time" name="endTime" required><br><br>
+
+        <button type="submit">Update Schedule</button>
+    </form>
+
+    <script>
+        // ✅ Token verification
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Please log in as an admin to access this page.");
+            window.location.href = "login.html";
+        }
+
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.role.toLowerCase() !== "admin") {
+            alert("Unauthorized access! Only admins can edit trainer schedules.");
+            window.location.href = "login.html";
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        const scheduleID = params.get("scheduleID");
+
+        // ✅ Fetch schedule details
+        fetch(`http://localhost:3000/trainerSchedules/${scheduleID}`, {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        })
+        .then(res => res.json())
+        .then(schedule => {
+            const form = document.forms["trainerScheduleForm"];
+            form.scheduleID.value = schedule.scheduleID;
+            form.trainerID.value = schedule.trainerID;
+            form.availableDays.value = schedule.availableDays;
+            form.startTime.value = schedule.startTime;
+            form.endTime.value = schedule.endTime;
+        })
+        .catch(err => {
+            console.error("❌ Error fetching schedule:", err);
+            alert("Failed to load trainer schedule.");
+        });
+
+        // ✅ Update on submit
+        document.getElementById("trainerScheduleForm").addEventListener("submit", function(e) {
+            e.preventDefault();
+            const form = this;
+            const data = {
+                trainerID: form.trainerID.value,
+                availableDays: form.availableDays.value,
+                startTime: form.startTime.value,
+                endTime: form.endTime.value
+            };
+
+            fetch(`http://localhost:3000/trainerSchedules/${scheduleID}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify(data)
+            })
+            .then(res => {
+                if (res.ok) {
+                    alert("Trainer schedule updated successfully");
+                    window.location.href = "trainerSchedulesIndex.html";
+                } else {
+                    alert("Failed to update schedule");
+                }
+            })
+            .catch(err => {
+                console.error("❌ Error updating schedule:", err);
+                alert("Failed to update schedule.");
+            });
+        });
+    </script>
+</body>
+</html>

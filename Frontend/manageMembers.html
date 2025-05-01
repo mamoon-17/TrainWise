@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="manageMembers.css">
+    <title>Members</title>
+</head>      
+<body>
+    <h1>All Members</h1>
+    <a href="memberAdd.html">Add New Member</a>
+    <br><br>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Member ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Membership Type</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="memberTableBody">
+            <!-- Member rows will be added here -->
+        </tbody>
+    </table>
+
+    <script>
+        // Check if the user has admin role
+        const token = localStorage.getItem("token");
+        if (!token) window.location.href = "login.html"; // Redirect to login if no token
+        
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.role.toLowerCase() !== "admin") {
+            alert("Unauthorized access!");
+            window.location.href = "login.html"; // Redirect non-admins to login
+        }
+
+        // Fetch members data from the backend
+        fetch("http://localhost:3000/members", {
+            headers: { "Authorization": `Bearer ${token}` }  // Sending JWT token for authentication
+        })
+            .then(res => res.json()) // Expecting JSON response from the backend
+            .then(members => {
+                const tbody = document.getElementById("memberTableBody");
+    
+                members.forEach(member => {
+                    const { memberID, name, email, phone, membershipType, start_date, end_date } = member;
+    
+                    const row = `
+                        <tr>
+                            <td>${memberID}</td>
+                            <td>${name}</td>
+                            <td>${email}</td>
+                            <td>${phone}</td>
+                            <td>${membershipType}</td>
+                            <td>${new Date(start_date).toLocaleDateString('en-GB')}</td>
+                            <td>${new Date(end_date).toLocaleDateString('en-GB')}</td>
+
+                            <td>
+                                <a href="memberEdit.html?id=${memberID}">Edit</a> |
+                                <button onclick="deleteMember('${memberID}')">Delete</button>
+                            </td>
+                        </tr>`;
+                    tbody.innerHTML += row;
+                });
+            })
+            .catch(err => {
+                console.error("Error fetching members:", err);
+            });
+    
+        function deleteMember(id) {
+            if (confirm("Are you sure you want to delete this member?")) {
+                fetch(`http://localhost:3000/members/${id}`, {
+                    method: "DELETE",
+                    headers: {
+                        "Authorization": `Bearer ${token}`  // Sending JWT token for authentication
+                    }
+                })
+                .then(res => {
+                    if (res.ok) {
+                        alert("Member deleted");
+                        location.reload();  // Reload the page to reflect the change
+                    } else {
+                        alert("Failed to delete member");
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

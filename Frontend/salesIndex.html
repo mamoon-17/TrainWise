@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales</title>
+    <link rel="stylesheet" href="salesIndex.css"> <!-- Link to your CSS -->
+</head>      
+<body>
+    <h1>All Sales</h1>
+    <a href="salesAdd.html">Add New Sale</a>
+    <br><br>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Sale ID</th>
+                <th>Product Name</th>
+                <th>Amount</th>
+                <th>Sale Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="salesTableBody">
+            <!-- Sale rows will be added here -->
+        </tbody>
+    </table>
+
+    <script>
+        // ✅ Admin-only access check
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Please log in first.");
+            window.location.href = "login.html"; // Redirect to login page if no token
+        }
+
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.role.toLowerCase() !== "admin") {
+            alert("Unauthorized access. Admins only.");
+            window.location.href = "login.html"; // Redirect to login page if user is not admin
+        }
+
+        fetch("http://localhost:3000/sales")
+            .then(res => res.json())
+            .then(sales => {
+                const tbody = document.getElementById("salesTableBody");
+
+                sales.forEach(sale => {
+                    const formattedDate = new Date(sale.saleDate).toLocaleDateString('en-GB');
+                    
+                    const row = `
+                        <tr>
+                            <td>${sale.saleID}</td>
+                            <td>${sale.productName}</td>
+                            <td>${sale.amount}</td>
+                            <td>${formattedDate}</td>
+                            <td>
+                                <a href="salesEdit.html?saleID=${sale.saleID}">Edit</a> |
+                                <button onclick="deleteSale('${sale.saleID}')">Delete</button>
+                            </td>
+                        </tr>`;
+                    tbody.innerHTML += row;
+                });
+            });
+
+        function deleteSale(saleID) {
+            if (confirm("Are you sure you want to delete this sale?")) {
+                fetch(`http://localhost:3000/sales/${saleID}`, {
+                    method: "DELETE"
+                })
+                .then(res => {
+                    if (res.ok) {
+                        alert("Sale deleted successfully");
+                        location.reload();
+                    } else {
+                        alert("Failed to delete sale");
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

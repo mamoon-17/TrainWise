@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Equipment</title>
+    <link rel="stylesheet" href="equipmentIndex.css">
+</head>
+<body>
+    <h1>Edit Equipment</h1>
+    <form id="equipmentForm">
+        <label>Equipment ID:</label><br>
+        <input type="number" name="equipmentID" required readonly><br><br>
+
+        <label>Equipment Name:</label><br>
+        <input type="text" name="name" required><br><br>
+
+        <label>Category:</label><br>
+        <input type="text" name="category" required><br><br>
+
+        <label>Quantity:</label><br>
+        <input type="number" name="qty" required min="1"><br><br>
+
+        <button type="submit">Update Equipment</button>
+    </form>
+
+    <script>
+        // ✅ Token & role validation
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Please log in as an admin.");
+            window.location.href = "login.html";
+        }
+
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.role.toLowerCase() !== "admin") {
+            alert("Unauthorized access!");
+            window.location.href = "login.html";
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        const equipmentID = params.get("id");
+
+        // ✅ Fetch equipment info
+        fetch(`http://localhost:3000/equipment/${equipmentID}`, {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        })
+        .then(res => {
+            if (!res.ok) throw new Error("Fetch failed");
+            return res.json();
+        })
+        .then(equipment => {
+            const form = document.forms["equipmentForm"];
+            form.equipmentID.value = equipment.equipmentID;
+            form.name.value = equipment.name;
+            form.category.value = equipment.category;
+            form.qty.value = equipment.qty;
+        })
+        .catch(err => {
+            console.error("Error fetching equipment:", err);
+            alert("Failed to load equipment.");
+        });
+
+        // ✅ Submit form to update equipment
+        document.getElementById("equipmentForm").addEventListener("submit", function(e) {
+            e.preventDefault();
+            const form = this;
+            const data = {
+                name: form.name.value,
+                category: form.category.value,
+                qty: parseInt(form.qty.value)
+            };
+
+            fetch(`http://localhost:3000/equipment/${equipmentID}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify(data)
+            })
+            .then(res => {
+                if (res.ok) {
+                    alert("✅ Equipment updated successfully");
+                    window.location.href = "equipmentIndex.html";
+                } else {
+                    alert("❌ Failed to update equipment");
+                }
+            })
+            .catch(err => {
+                console.error("❌ Error:", err);
+                alert("Error updating equipment.");
+            });
+        });
+    </script>
+</body>
+</html>

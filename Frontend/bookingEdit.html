@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Booking</title>
+    <link rel="stylesheet" href="bookingIndex.css"> <!-- Link to your CSS -->
+</head>
+<body>
+    <h1>Edit Booking</h1>
+    <form id="bookingForm">
+        <label>Booking ID:</label><br>
+        <input type="number" name="bookingID" readonly><br><br>
+
+        <label>Member ID:</label><br>
+        <input type="number" name="memberID" required><br><br>
+
+        <label>Session ID:</label><br>
+        <input type="number" name="sessionID" required><br><br>
+
+        <label>Booking Date:</label><br>
+        <input type="date" name="bookingDate" required><br><br>
+
+        <label>Status:</label><br>
+        <select name="status" required>
+            <option value="Pending">Pending</option>
+            <option value="Confirmed">Confirmed</option>
+            <option value="Cancelled">Cancelled</option>
+        </select><br><br>
+
+        <button type="submit">Update Booking</button>
+    </form>
+
+    <script>
+        // Admin Role Check
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Please login as admin to access this page.");
+            window.location.href = "login.html";
+        }
+
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.role.toLowerCase() !== "admin") {
+            alert("Unauthorized access!");
+            window.location.href = "login.html";
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        const bookingID = params.get("bookingID");
+
+        // Fetch and populate booking data
+        fetch(`http://localhost:3000/bookings/${bookingID}`)
+            .then(res => res.json())
+            .then(booking => {
+                const form = document.forms["bookingForm"];
+                form.bookingID.value = booking.bookingID;
+                form.memberID.value = booking.memberID;
+                form.sessionID.value = booking.sessionID;
+                form.bookingDate.value = booking.bookingDate.split("T")[0]; // Format date
+                form.status.value = booking.status;
+            })
+            .catch(err => {
+                console.error("❌ Error loading booking:", err);
+                alert("Failed to load booking data.");
+            });
+
+        // Submit form
+        document.getElementById("bookingForm").addEventListener("submit", function(e) {
+            e.preventDefault();
+            const form = this;
+            const data = {
+                memberID: form.memberID.value,
+                sessionID: form.sessionID.value,
+                bookingDate: form.bookingDate.value,
+                status: form.status.value
+            };
+
+            fetch(`http://localhost:3000/bookings/${bookingID}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            })
+            .then(res => {
+                if (res.ok) {
+                    alert("Booking updated successfully");
+                    window.location.href = "bookingIndex.html";
+                } else {
+                    alert("Failed to update booking");
+                }
+            })
+            .catch(err => {
+                console.error("❌ Error updating booking:", err);
+                alert("Error updating booking.");
+            });
+        });
+    </script>
+</body>
+</html>
